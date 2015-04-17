@@ -65,11 +65,15 @@ class Native implements StorageInterface {
 	}
 
 	public function get($key, $default = null) {
-		return array_key_exists($key, $_SESSION) ? $_SESSION[$key] : $default;
+		return $this->has($key) ? $_SESSION[$key] : $default;
 	}
 
 	public function remove($key) {
 		unset($_SESSION[$key]);
 	}
+
+	public function has($key) {
+                return array_key_exists($key, $_SESSION);
+        }
 
 }
