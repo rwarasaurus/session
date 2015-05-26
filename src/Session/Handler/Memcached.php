@@ -15,7 +15,7 @@ class Memcached implements Handler {
 		$this->ttl = $ttl;
 	}
 
-	public function destory($session_id) {
+	public function destroy($session_id) {
 		$this->memcache->delete($session_id);
 
 		return true;
@@ -36,7 +36,7 @@ class Memcached implements Handler {
 	public function read($session_id) {
 		$data = $this->memcache->get($session_id);
 
-		if($this->memcache->getResultCode() === Memcached::RES_NOTFOUND) {
+		if($this->memcache->getResultCode() === \Memcached::RES_NOTFOUND) {
 			return '';
 		}
 
