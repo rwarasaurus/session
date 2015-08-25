@@ -4,13 +4,13 @@ namespace Session\Handler;
 
 use Session\Contracts\Handler;
 
-class Memcached implements Handler {
+class Redis implements Handler {
 
 	protected $server;
 
 	protected $ttl;
 
-	public function __construct(\Memcached $server, $ttl = 7200) {
+	public function __construct(\Redis $server, $ttl = 7200) {
 		$this->server = $server;
 		$this->ttl = $ttl;
 	}
