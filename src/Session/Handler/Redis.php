@@ -14,9 +14,7 @@ class Redis implements \SessionHandlerInterface {
 	}
 
 	public function destroy($session_id) {
-		$this->server->delete($session_id);
-
-		return true;
+		return $this->server->delete($session_id) > 0;
 	}
 
 	public function gc($maxlifetime) {
@@ -36,7 +34,7 @@ class Redis implements \SessionHandlerInterface {
 	}
 
 	public function write($session_id, $session_data) {
-		$this->server->set($session_id, $session_data, $this->ttl);
+		return true === $this->server->set($session_id, $session_data, $this->ttl);
 	}
 
 }

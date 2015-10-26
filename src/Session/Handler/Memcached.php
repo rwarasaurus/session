@@ -14,9 +14,7 @@ class Memcached implements \SessionHandlerInterface {
 	}
 
 	public function destroy($session_id) {
-		$this->server->delete($session_id);
-
-		return true;
+		return $this->server->delete($session_id);
 	}
 
 	public function gc($maxlifetime) {
@@ -36,7 +34,7 @@ class Memcached implements \SessionHandlerInterface {
 	}
 
 	public function write($session_id, $session_data) {
-		$this->server->set($session_id, $session_data, $this->ttl);
+		return $this->server->set($session_id, $session_data, $this->ttl);
 	}
 
 }

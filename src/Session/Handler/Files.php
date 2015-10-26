@@ -2,9 +2,7 @@
 
 namespace Session\Handler;
 
-use FilesystemIterator;
-
-class File implements \SessionHandlerInterface {
+class Files implements \SessionHandlerInterface {
 
 	protected $path;
 
@@ -19,7 +17,7 @@ class File implements \SessionHandlerInterface {
 	}
 
 	public function gc($maxlifetime) {
-		$fi = new FilesystemIterator($this->path, FilesystemIterator::SKIP_DOTS);
+		$fi = new \FilesystemIterator($this->path, \FilesystemIterator::SKIP_DOTS);
 		$now = time();
 
 		foreach($fi as $file) {
@@ -38,7 +36,7 @@ class File implements \SessionHandlerInterface {
 			mkdir($this->path);
 		}
 
-		return true;
+		return is_file($this->path);
 	}
 
 	public function close() {
@@ -56,7 +54,7 @@ class File implements \SessionHandlerInterface {
 	}
 
 	public function write($session_id, $session_data) {
-		file_put_contents($this->path.'/'.$session_id, $session_data);
+		return false !== file_put_contents($this->path.'/'.$session_id, $session_data);
 	}
 
 }

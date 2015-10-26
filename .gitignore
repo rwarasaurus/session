@@ -1,4 +1,6 @@
 *.phar
 *.lock
-
-vendor
+*.log
+.DS_Store
+/vendor
+/bin

@@ -16,9 +16,7 @@ class Pdo implements \SessionHandlerInterface {
 	public function destroy($session_id) {
 		$sql = sprintf('DELETE FROM %s WHERE session_id = ?', $this->config['table']);
 		$stm = $this->pdo->prepare($sql);
-		$stm->execute([$session_id]);
-
-		return true;
+		return $stm->execute([$session_id]);
 	}
 
 	public function gc($maxlifetime) {
@@ -26,9 +24,7 @@ class Pdo implements \SessionHandlerInterface {
 		$stm = $this->pdo->prepare($sql);
 
 		$now = time();
-		$stm->execute([$maxlifetime, $now]);
-
-		return true;
+		return $stm->execute([$maxlifetime, $now]);
 	}
 
 	public function open($save_path, $session_id) {
@@ -36,9 +32,7 @@ class Pdo implements \SessionHandlerInterface {
 
 		$sql = sprintf('INSERT INTO %s (session_id, session_data, session_time) VALUES(?, ?, ?)', $this->config['table']);
 		$stm = $this->pdo->prepare($sql);
-		$stm->execute([$session_id, '', $session_time]);
-
-		return true;
+		return $stm->execute([$session_id, '', $session_time]);
 	}
 
 	public function close() {
@@ -56,7 +50,7 @@ class Pdo implements \SessionHandlerInterface {
 	public function write($session_id, $session_data) {
 		$sql = sprintf('UPDATE %s SET session_data = ? WHERE session_id = ?', $this->config['table']);
 		$stm = $this->pdo->prepare($sql);
-		$stm->execute([$session_data, $session_id]);
+		return $stm->execute([$session_data, $session_id]);
 	}
 
 }
