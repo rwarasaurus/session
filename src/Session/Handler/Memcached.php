@@ -30,7 +30,12 @@ class Memcached implements \SessionHandlerInterface {
 	}
 
 	public function read($session_id) {
-		return $this->server->get($session_id);
+		$result = $this->server->get($session_id);
+
+		// should always return a string
+		if(false === $result) return '';
+
+		return $result;
 	}
 
 	public function write($session_id, $session_data) {
