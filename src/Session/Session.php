@@ -2,10 +2,7 @@
 
 namespace Session;
 
-use Session\Storage\Native as NativeStorageHandler;
-use Session\Contracts\Storage as StorageInterface;
-
-class Session {
+class Session implements SessionInterface {
 
 	/**
 	 * Storage handler
@@ -20,7 +17,7 @@ class Session {
 	 * @param object StorageInterface
 	 */
 	public function __construct(StorageInterface $storage = null) {
-		$this->storage = null === $storage ? new NativeStorageHandler : $storage;
+		$this->storage = null === $storage ? new NativeStorage : $storage;
 	}
 
 	/**

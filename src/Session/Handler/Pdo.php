@@ -2,9 +2,7 @@
 
 namespace Session\Handler;
 
-use Session\Contracts\Handler;
-
-class Pdo implements Handler {
+class Pdo implements \SessionHandlerInterface {
 
 	protected $pdo;
 

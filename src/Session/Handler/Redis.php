@@ -2,9 +2,7 @@
 
 namespace Session\Handler;
 
-use Session\Contracts\Handler;
-
-class Redis implements Handler {
+class Redis implements \SessionHandlerInterface {
 
 	protected $server;
 

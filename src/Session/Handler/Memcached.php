@@ -2,9 +2,7 @@
 
 namespace Session\Handler;
 
-use Session\Contracts\Handler;
-
-class Memcached implements Handler {
+class Memcached implements \SessionHandlerInterface {
 
 	protected $server;
 

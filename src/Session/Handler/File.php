@@ -3,9 +3,8 @@
 namespace Session\Handler;
 
 use FilesystemIterator;
-use Session\Contracts\Handler;
 
-class File implements Handler {
+class File implements \SessionHandlerInterface {
 
 	protected $path;
 
