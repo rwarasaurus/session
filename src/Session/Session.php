@@ -2,7 +2,7 @@
 
 namespace Session;
 
-class Session implements SessionInterface {
+class Session implements SessionInterface, FlashInterface {
 
 	/**
 	 * Storage handler
@@ -12,11 +12,32 @@ class Session implements SessionInterface {
 	protected $storage;
 
 	/**
-	 * Avoid namespace collisions
+	 * Session key prefix to avoid namespace collisions
 	 *
 	 * @var string
 	 */
-	protected $sessionPrefix;
+	protected $prefix;
+
+	/**
+	 * Session flash in key
+	 *
+	 * @var string
+	 */
+	protected $flashInKey;
+
+	/**
+	 * Session flash out key
+	 *
+	 * @var string
+	 */
+	protected $flashOutKey;
+
+	/**
+	 * Session flash variable key prefix
+	 *
+	 * @var string
+	 */
+	protected $flashVarKey;
 
 	/**
 	 * Session constructor
@@ -24,9 +45,21 @@ class Session implements SessionInterface {
 	 * @param object StorageInterface
 	 * @param string
 	 */
-	public function __construct(StorageInterface $storage = null, $sessionPrefix = '_') {
+	public function __construct(StorageInterface $storage = null, $prefix = 'flash') {
 		$this->storage = null === $storage ? new NativeStorage : $storage;
-		$this->sessionPrefix = $sessionPrefix;
+		$this->setPrefix($prefix);
+	}
+
+	/**
+	 * Sets the internal session key prefix to avoid namespace collisions
+	 *
+	 * @param string
+	 */
+	public function setPrefix($prefix) {
+		$this->prefix = $prefix;
+		$this->flashInKey = $this->prefix . '.in';
+		$this->flashOutKey = $this->prefix . '.out';
+		$this->flashVarKey = $this->prefix . '.';
 	}
 
 	/**
@@ -47,60 +80,51 @@ class Session implements SessionInterface {
 	 * @param mixed
 	 */
 	public function push($key, $value) {
-		$array = $this->get($key, []);
+		$stack = $this->get($key, []);
 
-		$array[] = $value;
+		$stack[] = $value;
 
-		$this->put($key, $array);
+		$this->put($key, $stack);
 	}
 
 	/**
-	 * Flash a key value to be access in the next request
-	 *
-	 * @param string
-	 * @param mixed
+	 * {@inheritdoc}
 	 */
 	public function putFlash($key, $value) {
 		// save key in array to be rotated out
-		$this->push($this->sessionPrefix . 'in', $key);
+		$this->push($this->flashInKey, $key);
 
 		// save the key value
-		$this->put($this->sessionPrefix . 'flash.'.$key, $value);
+		$this->put($this->flashVarKey . $key, $value);
 	}
 
 	/**
-	 * Get value of a flash key
-	 *
-	 * @param string
-	 * @param mixed
-	 * @return mixed
+	 * {@inheritdoc}
 	 */
 	public function getFlash($key, $default = null) {
-		return $this->get($this->sessionPrefix . 'flash.'.$key, $default);
+		return $this->get($this->flashVarKey . $key, $default);
 	}
 
 	/**
-	 * Copy array of flash keys from `in` to `out`
-	 * and remove the `in` array
+	 * {@inheritdoc}
 	 */
 	public function rotate() {
 		// remove old keys
-		foreach($this->get($this->sessionPrefix . 'out', []) as $key) {
-			$this->remove($this->sessionPrefix . 'flash.'.$key);
+		foreach($this->get($this->flashOutKey, []) as $key) {
+			$this->remove($this->flashVarKey . $key);
 		}
 
-		// if we have a new in key array
-		if($this->has($this->sessionPrefix . 'in')) {
-			// copy it to the out key array for reading
-			$this->put($this->sessionPrefix . 'out', $this->get($this->sessionPrefix . 'in'));
+		// if we have something in the "in" key array
+		if($this->has($this->flashInKey)) {
+			// copy it to the "out" key array for reading
+			$this->put($this->flashOutKey, $this->get($this->flashInKey));
 
-			// remove the old in key array once its been copied
-			$this->remove($this->sessionPrefix . 'in');
+			// remove the "in" key array
+			return $this->remove($this->flashInKey);
 		}
-		// or just remove if we have nothing to copy in
-		else {
-			$this->remove($this->sessionPrefix . 'out');
-		}
+
+		// if theres nothing in the "in" key array remove the "out" key array
+		return $this->remove($this->flashOutKey);
 	}
 
 }

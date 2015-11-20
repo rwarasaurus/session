@@ -2,4 +2,8 @@
 
 namespace Session;
 
-interface SessionInterface {}
+interface SessionInterface {
+
+	public function push($key, $value);
+
+}
