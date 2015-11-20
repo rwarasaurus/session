@@ -12,12 +12,21 @@ class Session implements SessionInterface {
 	protected $storage;
 
 	/**
+	 * Avoid namespace collisions
+	 *
+	 * @var string
+	 */
+	protected $sessionPrefix;
+
+	/**
 	 * Session constructor
 	 *
 	 * @param object StorageInterface
+	 * @param string
 	 */
-	public function __construct(StorageInterface $storage = null) {
+	public function __construct(StorageInterface $storage = null, $sessionPrefix = '_') {
 		$this->storage = null === $storage ? new NativeStorage : $storage;
+		$this->sessionPrefix = $sessionPrefix;
 	}
 
 	/**
@@ -53,10 +62,10 @@ class Session implements SessionInterface {
 	 */
 	public function putFlash($key, $value) {
 		// save key in array to be rotated out
-		$this->push('in', $key);
+		$this->push($this->sessionPrefix . 'in', $key);
 
 		// save the key value
-		$this->put('_flash.'.$key, $value);
+		$this->put($this->sessionPrefix . 'flash.'.$key, $value);
 	}
 
 	/**
@@ -67,7 +76,7 @@ class Session implements SessionInterface {
 	 * @return mixed
 	 */
 	public function getFlash($key, $default = null) {
-		return $this->get('_flash.'.$key, $default);
+		return $this->get($this->sessionPrefix . 'flash.'.$key, $default);
 	}
 
 	/**
@@ -76,21 +85,21 @@ class Session implements SessionInterface {
 	 */
 	public function rotate() {
 		// remove old keys
-		foreach($this->get('out', []) as $key) {
-			$this->remove('_flash.'.$key);
+		foreach($this->get($this->sessionPrefix . 'out', []) as $key) {
+			$this->remove($this->sessionPrefix . 'flash.'.$key);
 		}
 
 		// if we have a new in key array
-		if($this->has('in')) {
+		if($this->has($this->sessionPrefix . 'in')) {
 			// copy it to the out key array for reading
-			$this->put('out', $this->get('in'));
+			$this->put($this->sessionPrefix . 'out', $this->get($this->sessionPrefix . 'in'));
 
 			// remove the old in key array once its been copied
-			$this->remove('in');
+			$this->remove($this->sessionPrefix . 'in');
 		}
 		// or just remove if we have nothing to copy in
 		else {
-			$this->remove('out');
+			$this->remove($this->sessionPrefix . 'out');
 		}
 	}
 
