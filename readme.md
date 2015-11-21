@@ -6,7 +6,7 @@ Quick start using native session storage
 	$s->start();
 
 	$s->put('foo', 'bar');
-	echo $\_SESSION['foo']; // output "bar"
+	echo $__SESSION['foo']; // output "bar"
 
 	$a = $s->get('foo');
 	echo $a; // output "bar"
