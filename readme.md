@@ -1,4 +1,4 @@
-# Just another session wrapper library
+# Just another session library
 
 Quick start using native session storage
 
