@@ -6,14 +6,26 @@ class Files implements \SessionHandlerInterface {
 
 	protected $path;
 
-	public function destroy($session_id) {
-		$filepath = $this->path.'/'.$session_id;
-
-		if(is_file($filepath)) {
-			return unlink($filepath);
+	protected function filepath($session_id) {
+		if(null === $this->path) {
+			throw new \RuntimeException('Session path has not been set, make sure you call open() first');
 		}
 
-		return true;
+		if(false === is_dir($this->path)) {
+			throw new \RuntimeException(sprintf('Session path does not exist "%s"', $this->path));
+		}
+
+		if(false === is_writable($this->path)) {
+			throw new \RuntimeException(sprintf('Session path is not writable "%s"', $this->path));
+		}
+
+		return sprintf('%s/sess_%s', $this->path, $session_id);
+	}
+
+	public function destroy($session_id) {
+		$filepath = $this->filepath($session_id);
+
+		return is_file($filepath) ? unlink($filepath) : true;
 	}
 
 	public function gc($maxlifetime) {
@@ -32,11 +44,9 @@ class Files implements \SessionHandlerInterface {
 	public function open($save_path, $session_id) {
 		$this->path = $save_path;
 
-		if(false === is_dir($this->path)) {
-			mkdir($this->path);
-		}
+		$filepath = $this->filepath($session_id);
 
-		return is_file($this->path);
+		return touch($filepath);
 	}
 
 	public function close() {
@@ -44,17 +54,15 @@ class Files implements \SessionHandlerInterface {
 	}
 
 	public function read($session_id) {
-		$filepath = $this->path.'/'.$session_id;
+		$filepath = $this->filepath($session_id);
 
-		if(is_file($filepath)) {
-			return file_get_contents($filepath);
-		}
-
-		return '';
+		return file_get_contents($filepath);
 	}
 
 	public function write($session_id, $session_data) {
-		return false !== file_put_contents($this->path.'/'.$session_id, $session_data);
+		$filepath = $this->filepath($session_id);
+
+		return false !== file_put_contents($filepath, $session_data);
 	}
 
 }
