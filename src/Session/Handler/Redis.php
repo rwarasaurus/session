@@ -8,7 +8,7 @@ class Redis implements \SessionHandlerInterface {
 
 	protected $ttl;
 
-	public function __construct(\Redis $server, $ttl = 7200) {
+	public function __construct($server, $ttl = 7200) {
 		$this->server = $server;
 		$this->ttl = $ttl;
 	}
