@@ -78,7 +78,9 @@ class NativeStorage implements StorageInterface {
 	 * {@inheritdoc}
 	 */
 	public function regenerate($destroy = false) {
-		session_regenerate_id($destroy);
+		if($this->started()) {
+			session_regenerate_id($destroy);
+		}
 	}
 
 	/**
