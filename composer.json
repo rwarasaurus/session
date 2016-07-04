@@ -2,7 +2,6 @@
 	"name": "rwarasaurus/session",
 	"description": "Session wrapper",
 	"license": "GPL-3.0",
-	"version": "0.0.2",
 	"type": "library",
 	"authors": [
 		{
@@ -17,17 +16,17 @@
 		}
 	],
 	"require": {
-		"php": ">=5.6"
+		"php": "^7"
 	},
 	"require-dev": {
-		"phpspec/phpspec": "2.4.0-beta"
+		"phpspec/phpspec": "~2"
 	},
 	"config": {
 		"bin-dir": "bin"
 	},
 	"autoload": {
 		"psr-4": {
-			"": "src/"
+			"Session\\": "src/"
 		}
 	}
 }

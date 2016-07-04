@@ -2,7 +2,7 @@
 
 namespace Session\Handler;
 
-class Memcached implements \SessionHandlerInterface {
+class Redis implements \SessionHandlerInterface {
 
 	protected $server;
 
@@ -14,7 +14,9 @@ class Memcached implements \SessionHandlerInterface {
 	}
 
 	public function destroy($session_id) {
-		return $this->server->delete($session_id);
+		$this->server->delete($session_id);
+
+		return true;
 	}
 
 	public function gc($maxlifetime) {
@@ -30,16 +32,11 @@ class Memcached implements \SessionHandlerInterface {
 	}
 
 	public function read($session_id) {
-		$result = $this->server->get($session_id);
-
-		// should always return a string
-		if(false === $result) return '';
-
-		return $result;
+		return $this->server->get($session_id);
 	}
 
 	public function write($session_id, $session_data) {
-		return $this->server->set($session_id, $session_data, $this->ttl);
+		return true === $this->server->set($session_id, $session_data, $this->ttl);
 	}
 
 }
