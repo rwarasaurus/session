@@ -18,7 +18,7 @@ interface SessionInterface extends StashInterface
 
     public function started(): bool;
 
-    public function close(ResponseInterface $response);
+    public function close(ResponseInterface $response = null);
 
     public function has(string $key): bool;
 

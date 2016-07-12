@@ -1,32 +1,62 @@
-# Just another session library
+# PSR7 JSON Session storage
 
-Quick start using native session storage
+Sessions are persisted using the session `close` method, optiuonally you can pass a psr7
+response object to set the cookie, session data is stored as a json encoded string.
 
-	$s = new Session\Session();
-	$s->start();
+Quick start using array session storage
 
-	$s->put('foo', 'bar');
-	echo $_SESSION['foo']; // output "bar"
+	use Session\{
+		Session,
+		Cookies,
+		ArrayStorage
+	};
 
-	$a = $s->get('foo');
-	echo $a; // output "bar"
+	$session = new Session(new Cookies, new ArrayStorage);
+	$session->start();
 
-	$s->remove('foo');
+	$session->put('foo', 'bar');
+	echo $session->get('foo'); // output "bar"
 
-	$b = $s->get('foo', 'baz');
+	$session->remove('foo');
+
+	$b = $session->get('foo', 'baz');
 	echo $b; // output "baz"
+
+Closing the session and setting the cookie
+
+	$session->close();
+	header('Set-Cookie', $session->cookie());
+
+Using PSR7 Response
+
+	$response = new Psr\Http\Message\Response;
+	$session->close($response);
 
 ## Session storage handlers
 
-Memcached example
+Redis example
 
-	$memcached = new Memcached;
-	$memcached->addServer('localhost', 11211);
+	use Redis;
+	use Session\{
+		Session,
+		Cookies,
+		RedisStorage
+	};
 
-	// session config
-	// http://php.net/manual/en/session.configuration.php
-	$options = ['name' => 'my_session'];
+	$redis = new Redis;
+	$ttl = 3600;
+	$storage = new RedisStorage(redis, $ttl);
+	$session = new Session(new Cookies, $storage);
 
-	$handler = new Session\Handler\Memcached($memcached);
-	$storage = new Session\NativeStorage($handler, $options);
-	$session = new Session\Session($storage);
+File storage example
+
+	use Session\{
+		Session,
+		Cookies,
+		FileStorage
+	};
+
+	// you will have to implement your own garbage collection for now
+	$storage = new FileStorage('/path/to/sessions');
+
+	$session = new Session(new Cookies, $storage);

@@ -93,17 +93,17 @@ class Session implements SessionInterface
         $this->storage->write($this->id, $this->data);
     }
 
-    public function close(ResponseInterface $response)
+    public function close(ResponseInterface $response = null)
     {
-        if (false === $this->started) {
-            return $response;
+        if (!$this->started) {
+            throw new \RuntimeException('Session has not been started');
         }
-
-        $response = $response->withAddedHeader('Set-Cookie', $this->cookie());
 
         $this->commit();
 
-        return $response;
+        if($response) {
+            return $response->withAddedHeader('Set-Cookie', $this->cookie());
+        }
     }
 
     protected function cookie(): string
