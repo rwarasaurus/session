@@ -10,30 +10,19 @@ class Session implements SessionInterface
 
     protected $storage;
 
-    protected $data;
+    protected $data = [];
 
     protected $id;
 
     protected $options;
 
-    protected $started;
+    protected $started = false;
 
     public function __construct(CookiesInterface $cookies, StorageInterface $storage, array $options = [])
     {
         $this->cookies = $cookies;
         $this->storage = $storage;
-        $defaults = [
-            'name' => 'PHPSESSID',
-            'expire' => 0,
-            'path' => '',
-            'domain' => '',
-            'secure' => 0,
-            'httponly' => 1,
-            'entropy' => 32,
-        ];
-        $this->options = array_merge($defaults, $options);
-        $this->data = [];
-        $this->started = false;
+        $this->setOptions($options);
     }
 
     protected function generate(): string
@@ -49,6 +38,23 @@ class Session implements SessionInterface
     public function name(): string
     {
         return $this->options['name'];
+    }
+
+    public function getOptions(): array {
+        return $this->options;
+    }
+
+    public function setOptions(array $options) {
+        $defaults = [
+            'name' => 'PHPSESSID',
+            'expire' => 0,
+            'path' => '',
+            'domain' => '',
+            'secure' => 0,
+            'httponly' => 1,
+            'entropy' => 32,
+        ];
+        $this->options = array_merge($defaults, $options);
     }
 
     public function migrate(): SessionInterface
