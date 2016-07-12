@@ -40,11 +40,13 @@ class Session implements SessionInterface
         return $this->options['name'];
     }
 
-    public function getOptions(): array {
+    public function getOptions(): array
+    {
         return $this->options;
     }
 
-    public function setOptions(array $options) {
+    public function setOptions(array $options)
+    {
         $defaults = [
             'name' => 'PHPSESSID',
             'expire' => 0,
@@ -107,7 +109,7 @@ class Session implements SessionInterface
 
         $this->commit();
 
-        if($response) {
+        if ($response) {
             return $response->withAddedHeader('Set-Cookie', $this->cookie());
         }
     }

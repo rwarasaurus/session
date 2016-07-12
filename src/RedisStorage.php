@@ -15,11 +15,7 @@ class RedisStorage implements StorageInterface
 
     public function __construct(Redis $server, int $expire = 3600, string $prefix = 'sess_')
     {
-        if($expire < 1) {
-            throw new InvalidArgumentException('expire time must be greater than zero');
-        }
-
-        if(is_numeric(substr($prefix, 0, 1))) {
+        if (is_numeric(substr($prefix, 0, 1))) {
             throw new InvalidArgumentException('prefix can not start with a number');
         }
 
@@ -32,7 +28,7 @@ class RedisStorage implements StorageInterface
     {
         $contents = $this->server->get($this->prefix.$id);
 
-        if(empty($contents)) {
+        if (empty($contents)) {
             return [];
         }
 
@@ -43,7 +39,14 @@ class RedisStorage implements StorageInterface
     {
         $jsonString = json_encode($data);
 
-        return $this->server->set($this->prefix.$id, $jsonString, $this->expire);
+        if ($this->server->set($this->prefix.$id, $jsonString)) {
+            if ($this->expire) {
+                $this->server->expire($this->prefix.$id, $this->expire);
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public function destroy(string $id): bool
