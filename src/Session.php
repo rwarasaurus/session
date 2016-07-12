@@ -50,7 +50,7 @@ class Session implements SessionInterface
         $defaults = [
             'name' => 'PHPSESSID',
             'expire' => 0,
-            'path' => '',
+            'path' => '/',
             'domain' => '',
             'secure' => 0,
             'httponly' => 1,
