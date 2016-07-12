@@ -2,129 +2,193 @@
 
 namespace Session;
 
-class Session implements SessionInterface, FlashInterface {
+use Psr\Http\Message\ResponseInterface;
 
-	/**
-	 * Storage handler
-	 *
-	 * @var object StorageInterface
-	 */
-	protected $storage;
+class Session implements SessionInterface
+{
+    protected $cookies;
 
-	/**
-	 * Session key prefix to avoid namespace collisions
-	 *
-	 * @var string
-	 */
-	protected $prefix;
+    protected $storage;
 
-	/**
-	 * Session flash in key
-	 *
-	 * @var string
-	 */
-	protected $flashInKey;
+    protected $data;
 
-	/**
-	 * Session flash out key
-	 *
-	 * @var string
-	 */
-	protected $flashOutKey;
+    protected $id;
 
-	/**
-	 * Session flash variable key prefix
-	 *
-	 * @var string
-	 */
-	protected $flashVarKey;
+    protected $options;
 
-	/**
-	 * Session constructor
-	 *
-	 * @param object StorageInterface
-	 * @param string
-	 */
-	public function __construct(StorageInterface $storage = null, $prefix = 'flash') {
-		$this->storage = null === $storage ? new NativeStorage : $storage;
-		$this->setPrefix($prefix);
-	}
+    protected $started;
 
-	/**
-	 * Sets the internal session key prefix to avoid namespace collisions
-	 *
-	 * @param string
-	 */
-	public function setPrefix($prefix) {
-		$this->prefix = $prefix;
-		$this->flashInKey = $this->prefix . '.in';
-		$this->flashOutKey = $this->prefix . '.out';
-		$this->flashVarKey = $this->prefix . '.';
-	}
+    public function __construct(CookiesInterface $cookies, StorageInterface $storage, array $options = [])
+    {
+        $this->cookies = $cookies;
+        $this->storage = $storage;
+        $defaults = [
+            'name' => 'PHPSESSID',
+            'expire' => 0,
+            'path' => '',
+            'domain' => '',
+            'secure' => 0,
+            'httponly' => 1,
+            'entropy' => 32,
+        ];
+        $this->options = array_merge($defaults, $options);
+        $this->data = [];
+        $this->started = false;
+    }
 
-	/**
-	 * Call method on the storage handler
-	 *
-	 * @param string
-	 * @param array
-	 * @return mixed
-	 */
-	public function __call($method, array $args) {
-		return call_user_func_array([$this->storage, $method], $args);
-	}
+    protected function generate(): string
+    {
+        return bin2hex(random_bytes($this->options['entropy']));
+    }
 
-	/**
-	 * Stack a value in a array
-	 *
-	 * @param string
-	 * @param mixed
-	 */
-	public function push($key, $value) {
-		$stack = $this->get($key, []);
+    public function id(): string
+    {
+        return $this->id;
+    }
 
-		$stack[] = $value;
+    public function name(): string
+    {
+        return $this->options['name'];
+    }
 
-		$this->put($key, $stack);
-	}
+    public function migrate(): SessionInterface
+    {
+        $this->id = $this->generate();
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function putFlash($key, $value) {
-		// save key in array to be rotated out
-		$this->push($this->flashInKey, $key);
+        return $this;
+    }
 
-		// save the key value
-		$this->put($this->flashVarKey . $key, $value);
-	}
+    public function destroy(): SessionInterface
+    {
+        $this->storage->destroy($this->id);
+        $this->data = [];
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function getFlash($key, $default = null) {
-		return $this->get($this->flashVarKey . $key, $default);
-	}
+        return $this->migrate();
+    }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function rotate() {
-		// remove old keys
-		foreach($this->get($this->flashOutKey, []) as $key) {
-			$this->remove($this->flashVarKey . $key);
-		}
+    public function start()
+    {
+        if ($this->cookies->has($this->options['name'])) {
+            $this->id = $this->cookies->get($this->options['name']);
+        } else {
+            $this->id = $this->generate();
+        }
 
-		// if we have something in the "in" key array
-		if($this->has($this->flashInKey)) {
-			// copy it to the "out" key array for reading
-			$this->put($this->flashOutKey, $this->get($this->flashInKey));
+        $this->data = $this->storage->read($this->id);
 
-			// remove the "in" key array
-			return $this->remove($this->flashInKey);
-		}
+        $this->started = true;
+    }
 
-		// if theres nothing in the "in" key array remove the "out" key array
-		return $this->remove($this->flashOutKey);
-	}
+    public function started(): bool
+    {
+        return $this->started;
+    }
 
+    protected function commit()
+    {
+        if (!$this->started) {
+            throw new \RuntimeException('Session has not been started');
+        }
+
+        $this->storage->write($this->id, $this->data);
+    }
+
+    public function close(ResponseInterface $response)
+    {
+        if (false === $this->started) {
+            return $response;
+        }
+
+        $response = $response->withAddedHeader('Set-Cookie', $this->cookie());
+
+        $this->commit();
+
+        return $response;
+    }
+
+    protected function cookie(): string
+    {
+        $pairs = [
+            sprintf('%s=%s', $this->options['name'], $this->id),
+        ];
+
+        if ($this->options['expire']) {
+            $gmdate = new \DateTime();
+            $gmdate->setTimezone(new \DateTimeZone('UTC'));
+            $format = sprintf('PT%dS', $this->options['expire']);
+            $gmdate->add(new \DateInterval($format));
+            $pairs[] = sprintf('expires=%s', $gmdate->format(\DateTime::COOKIE));
+        }
+
+        if ($this->options['path']) {
+            $pairs[] = sprintf('path=%s', $this->options['path']);
+        }
+
+        if ($this->options['domain']) {
+            $pairs[] = sprintf('domain=%s', $this->options['domain']);
+        }
+
+        if ($this->options['secure']) {
+            $pairs[] = 'secure';
+        }
+
+        if ($this->options['httponly']) {
+            $pairs[] = 'HttpOnly';
+        }
+
+        return implode('; ', $pairs);
+    }
+
+    public function has(string $key): bool
+    {
+        return array_key_exists($key, $this->data);
+    }
+
+    public function get(string $key, $default = null)
+    {
+        return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
+    }
+
+    public function all(): array
+    {
+        return array_intersect_key(['_stash_in', '_stash_out'], $this->data);
+    }
+
+    public function put(string $key, $value): SessionInterface
+    {
+        $this->data[$key] = $value;
+
+        return $this;
+    }
+
+    public function remove(string $key): SessionInterface
+    {
+        if ($this->has($key)) {
+            unset($this->data[$key]);
+        }
+
+        return $this;
+    }
+
+    public function rotate(): SessionInterface
+    {
+        $this->data['_stash_out'] = [];
+
+        if (array_key_exists('_stash_in', $this->data)) {
+            $this->data['_stash_out'] = $this->data['_stash_in'];
+            unset($this->data['_stash_in']);
+        }
+
+        return $this;
+    }
+
+    public function getStash(string $key, $default = null)
+    {
+        return $this->data['_stash_out'][$key] ?? $default;
+    }
+
+    public function putStash(string $key, $value)
+    {
+        $this->data['_stash_in'][$key] = $value;
+    }
 }

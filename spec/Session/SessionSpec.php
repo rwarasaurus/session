@@ -4,41 +4,61 @@ namespace spec\Session;
 
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
-use Session\StorageInterface;
+use Session\Cookies;
+use Session\ArrayStorage;
 
 class SessionSpec extends ObjectBehavior {
 
-	public function it_is_initializable() {
-		$this->shouldHaveType('Session\Session');
+	public function it_should_return_a_id(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage);
+		$cookies->has('PHPSESSID')->willReturn(true);
+		$cookies->get('PHPSESSID')->willReturn('1234');
+		$storage->read('1234')->shouldBeCalled();
+		$this->start();
+		$this->id()->shouldEqual('1234');
 	}
 
-	public function it_should_stack_a_value_in_the_same_key(StorageInterface $handler) {
-		$key = 'foo';
-		$value = 'bar';
-		$handler->get($key, [])->shouldBeCalled();
-		$handler->put($key, [$value])->shouldBeCalled();
-		$this->beConstructedWith($handler);
-		$this->push($key, $value);
+	public function it_should_return_a_name(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage, ['name' => 'foo']);
+		$this->name()->shouldEqual('foo');
 	}
 
-	public function it_should_flash_a_key_value_onto_the_in_array(StorageInterface $handler) {
-		$key = 'foo';
-		$value = 'bar';
-		$prefix = 'myprefix';
-		$handler->get($prefix.'.in', [])->shouldBeCalled();
-		$handler->put($prefix.'.in', [$key])->shouldBeCalled();
-		$handler->put($prefix.'.' . $key, $value)->shouldBeCalled();
-		$this->beConstructedWith($handler, $prefix);
-		$this->putFlash($key, $value);
+	public function it_should_migrate_id(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage);
+		$cookies->has('PHPSESSID')->willReturn(true);
+		$cookies->get('PHPSESSID')->willReturn('1234');
+		$storage->read('1234')->shouldBeCalled();
+		$this->start();
+		$this->id()->shouldEqual('1234');
+		$this->migrate();
+		$this->id()->shouldNotEqual('1234');
 	}
 
-	public function it_should_return_flashed_value_by_key(StorageInterface $handler) {
-		$key = 'foo';
-		$value = 'bar';
-		$prefix = 'myprefix';
-		$handler->get($prefix . '.' . $key, null)->shouldBeCalled();
-		$this->beConstructedWith($handler, $prefix);
-		$this->getFlash($key);
+	public function it_should_destroy_session(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage);
+		$cookies->has('PHPSESSID')->willReturn(true);
+		$cookies->get('PHPSESSID')->willReturn('1234');
+		$storage->read('1234')->shouldBeCalled();
+		$this->start();
+		$this->id()->shouldEqual('1234');
+		$storage->destroy('1234')->shouldBeCalled();
+		$this->destroy();
+		$this->id()->shouldNotEqual('1234');
+	}
+
+	public function it_should_check_if_the_session_has_started(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage);
+		$this->started()->shouldEqual(false);
+		$cookies->has('PHPSESSID')->willReturn(true);
+		$cookies->get('PHPSESSID')->willReturn('1234');
+		$storage->read('1234')->shouldBeCalled();
+		$this->start();
+		$this->started()->shouldEqual(true);
 	}
 
 }
