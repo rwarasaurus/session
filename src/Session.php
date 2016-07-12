@@ -106,7 +106,7 @@ class Session implements SessionInterface
         }
     }
 
-    protected function cookie(): string
+    public function cookie(): string
     {
         $pairs = [
             sprintf('%s=%s', $this->options['name'], $this->id),
