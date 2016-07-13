@@ -11,9 +11,14 @@ class FileStorage implements StorageInterface
         $this->path = realpath($path);
     }
 
+    protected function filepath(string $id): string
+    {
+        return sprintf('%s/%s.sess', $this->path, $id);
+    }
+
     public function read(string $id): array
     {
-        $path = sprintf('%s/%s.sess', $this->path, $id);
+        $path = $this->filepath($id);
 
         $contents = file_get_contents($path);
 
@@ -22,14 +27,14 @@ class FileStorage implements StorageInterface
 
     public function exists(string $id): bool
     {
-        $path = sprintf('%s/%s.sess', $this->path, $id);
+        $path = $this->filepath($id);
 
         return is_file($path);
     }
 
     public function write(string $id, array $data): bool
     {
-        $path = sprintf('%s/%s.sess', $this->path, $id);
+        $path = $this->filepath($id);
 
         $jsonString = json_encode($data);
 
@@ -42,7 +47,7 @@ class FileStorage implements StorageInterface
 
     public function destroy(string $id): bool
     {
-        $path = sprintf('%s/%s.sess', $this->path, $id);
+        $path = $this->filepath($id);
 
         return is_file($path) && unlink($path);
     }

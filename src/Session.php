@@ -85,11 +85,10 @@ class Session implements SessionInterface
         // try and resume session from cookie
         if ($this->cookies->has($name)) {
             $this->id = $this->cookies->get($name);
-            if($this->storage->exists($this->id)) {
+            if ($this->storage->exists($this->id)) {
                 $this->data = $this->storage->read($this->id);
             }
-        }
-        else {
+        } else {
             // create a new session id
             $this->migrate();
         }
