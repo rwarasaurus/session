@@ -101,7 +101,7 @@ class Session implements SessionInterface
         if ($this->storage->exists($this->id)) {
             $this->data = $this->storage->read($this->id);
         } else {
-            $this->id = $this->generate();
+            $this->create();
         }
     }
 
