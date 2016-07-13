@@ -75,15 +75,18 @@ class Session implements SessionInterface
         return $this->migrate();
     }
 
-    protected function ua(): string {
+    protected function ua(): string
+    {
         return $_SERVER['HTTP_USER_AGENT'] ?? 'other';
     }
 
-    protected function ip(): string {
+    protected function ip(): string
+    {
         return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     }
 
-    protected function create() {
+    protected function create()
+    {
         $this->id = $this->generate();
         $this->data = [
             'ua' => $this->ua(),
@@ -91,16 +94,24 @@ class Session implements SessionInterface
         ];
     }
 
-    protected function resume() {
-        $this->id = $this->cookies->get($this->options['name']);
-        $this->data = $this->storage->read($this->id);
+    protected function resume()
+    {
+        $this->id = $this->cookies->get($this->name());
+
+        if ($this->storage->exists($this->id)) {
+            $this->data = $this->storage->read($this->id);
+        } else {
+            $this->id = $this->generate();
+        }
     }
 
-    public function isStrict(): bool {
+    public function isStrict(): bool
+    {
         return $this->options['strict'];
     }
 
-    protected function matchRules(): bool {
+    protected function matchRules(): bool
+    {
         return empty($this->data['ua']) || $this->data['ua'] != $this->ua() ||
             empty($this->data['ip']) || $this->data['ip'] != $this->ip();
     }
@@ -114,7 +125,7 @@ class Session implements SessionInterface
         }
 
         // in strict mode match rules
-        if($this->isStrict() && false === $this->matchRules()) {
+        if ($this->isStrict() && false === $this->matchRules()) {
             // matches failed start a new session
             $this->create();
         }

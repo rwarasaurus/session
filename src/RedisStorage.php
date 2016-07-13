@@ -28,11 +28,12 @@ class RedisStorage implements StorageInterface
     {
         $contents = $this->server->get($this->prefix.$id);
 
-        if (empty($contents)) {
-            return [];
-        }
-
         return json_decode($contents, true);
+    }
+
+    public function exists(string $id): bool
+    {
+        return $this->server->exists($this->prefix.$id);
     }
 
     public function write(string $id, array $data): bool
@@ -42,8 +43,7 @@ class RedisStorage implements StorageInterface
         if ($this->server->set($this->prefix.$id, $jsonString)) {
             if ($this->expire) {
                 $this->server->expire($this->prefix.$id, $this->expire);
-            }
-            else {
+            } else {
                 $this->server->persist($this->prefix.$id);
             }
             return true;

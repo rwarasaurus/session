@@ -15,6 +15,7 @@ class SessionSpec extends ObjectBehavior
         $this->beConstructedWith($cookies, $storage);
         $cookies->has('PHPSESSID')->willReturn(true);
         $cookies->get('PHPSESSID')->willReturn('1234');
+        $storage->exists('1234')->willReturn(true);
         $storage->read('1234')->shouldBeCalled();
         $this->start();
         $this->id()->shouldEqual('1234');
@@ -31,6 +32,7 @@ class SessionSpec extends ObjectBehavior
         $this->beConstructedWith($cookies, $storage);
         $cookies->has('PHPSESSID')->willReturn(true);
         $cookies->get('PHPSESSID')->willReturn('1234');
+        $storage->exists('1234')->willReturn(true);
         $storage->read('1234')->shouldBeCalled();
         $this->start();
         $this->id()->shouldEqual('1234');
@@ -43,6 +45,7 @@ class SessionSpec extends ObjectBehavior
         $this->beConstructedWith($cookies, $storage);
         $cookies->has('PHPSESSID')->willReturn(true);
         $cookies->get('PHPSESSID')->willReturn('1234');
+        $storage->exists('1234')->willReturn(true);
         $storage->read('1234')->shouldBeCalled();
         $this->start();
         $this->id()->shouldEqual('1234');
@@ -57,6 +60,7 @@ class SessionSpec extends ObjectBehavior
         $this->started()->shouldEqual(false);
         $cookies->has('PHPSESSID')->willReturn(true);
         $cookies->get('PHPSESSID')->willReturn('1234');
+        $storage->exists('1234')->willReturn(true);
         $storage->read('1234')->shouldBeCalled();
         $this->start();
         $this->started()->shouldEqual(true);

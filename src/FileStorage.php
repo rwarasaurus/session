@@ -15,13 +15,16 @@ class FileStorage implements StorageInterface
     {
         $path = sprintf('%s/%s.sess', $this->path, $id);
 
-        if (false === is_file($path)) {
-            return [];
-        }
-
         $contents = file_get_contents($path);
 
         return json_decode($contents, true);
+    }
+
+    public function exists(string $id): bool
+    {
+        $path = sprintf('%s/%s.sess', $this->path, $id);
+
+        return is_file($path);
     }
 
     public function write(string $id, array $data): bool

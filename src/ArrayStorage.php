@@ -8,11 +8,12 @@ class ArrayStorage implements StorageInterface
 
     public function read(string $id): array
     {
-        if (false === isset($this->array[$id])) {
-            return [];
-        }
-
         return json_decode($this->array[$id], true);
+    }
+
+    public function exists(string $id): bool
+    {
+        return isset($this->array[$id]);
     }
 
     public function write(string $id, array $data): bool
