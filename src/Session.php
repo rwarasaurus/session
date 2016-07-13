@@ -2,8 +2,6 @@
 
 namespace Session;
 
-use Psr\Http\Message\ResponseInterface;
-
 class Session implements SessionInterface
 {
     protected $cookies;
@@ -147,7 +145,7 @@ class Session implements SessionInterface
         $this->storage->write($this->id, $this->data);
     }
 
-    public function close(ResponseInterface $response = null)
+    public function close()
     {
         if (!$this->started) {
             throw new \RuntimeException('Session has not been started');
@@ -155,9 +153,7 @@ class Session implements SessionInterface
 
         $this->commit();
 
-        if ($response) {
-            return $response->withAddedHeader('Set-Cookie', $this->cookie());
-        }
+        $this->started = false;
     }
 
     public function cookie(): string

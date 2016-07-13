@@ -8,11 +8,6 @@
 			"name": "Kieron",
 			"homepage": "http://madebykieron.co.uk",
 			"role": "Developer"
-		},
-		{
-			"name": "Ricky",
-			"homepage": "http://yo.nerdyman.io",
-			"role": "Developer"
 		}
 	],
 	"require": {

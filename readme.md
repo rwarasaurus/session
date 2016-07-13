@@ -1,7 +1,6 @@
 # PSR7 JSON Session storage
 
-Sessions are persisted using the session `close` method, optiuonally you can pass a psr7
-response object to set the cookie, session data is stored as a json encoded string.
+Session data is stored as a json encoded string.
 
 Quick start using array session storage
 
@@ -27,10 +26,10 @@ Closing the session and setting the cookie
 	$session->close();
 	header('Set-Cookie', $session->cookie());
 
-Using PSR7 Response
-
+	# Using PSR7 Response
+	$session->close();
 	$response = new Psr\Http\Message\Response;
-	$session->close($response);
+	$response->withAddedHeader('Set-Cookie', $session->cookie());
 
 ## Session storage handlers
 
