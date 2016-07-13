@@ -50,11 +50,12 @@ class Session implements SessionInterface
         $defaults = [
             'name' => 'PHPSESSID',
             'expire' => 0,
-            'path' => '/',
+            'path' => '',
             'domain' => '',
             'secure' => 0,
-            'httponly' => 1,
+            'httponly' => 0,
             'entropy' => 32,
+            'strict' => 0,
         ];
         $this->options = array_merge($defaults, $options);
     }
@@ -74,15 +75,49 @@ class Session implements SessionInterface
         return $this->migrate();
     }
 
+    protected function ua(): string {
+        return $_SERVER['HTTP_USER_AGENT'] ?? 'other';
+    }
+
+    protected function ip(): string {
+        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+
+    protected function create() {
+        $this->id = $this->generate();
+        $this->data = [
+            'ua' => $this->ua(),
+            'ip' => $this->ip(),
+        ];
+    }
+
+    protected function resume() {
+        $this->id = $this->cookies->get($this->options['name']);
+        $this->data = $this->storage->read($this->id);
+    }
+
+    public function isStrict(): bool {
+        return $this->options['strict'];
+    }
+
+    protected function matchRules(): bool {
+        return empty($this->data['ua']) || $this->data['ua'] != $this->ua() ||
+            empty($this->data['ip']) || $this->data['ip'] != $this->ip();
+    }
+
     public function start()
     {
         if ($this->cookies->has($this->options['name'])) {
-            $this->id = $this->cookies->get($this->options['name']);
+            $this->resume();
         } else {
-            $this->id = $this->generate();
+            $this->create();
         }
 
-        $this->data = $this->storage->read($this->id);
+        // in strict mode match rules
+        if($this->isStrict() && false === $this->matchRules()) {
+            // matches failed start a new session
+            $this->create();
+        }
 
         $this->started = true;
     }
@@ -122,10 +157,10 @@ class Session implements SessionInterface
 
         if ($this->options['expire']) {
             $gmdate = new \DateTime();
-            $gmdate->setTimezone(new \DateTimeZone('UTC'));
+            $gmdate->setTimezone(new \DateTimeZone('GMT'));
             $format = sprintf('PT%dS', $this->options['expire']);
             $gmdate->add(new \DateInterval($format));
-            $pairs[] = sprintf('expires=%s', $gmdate->format(\DateTime::COOKIE));
+            $pairs[] = sprintf('expires=%s; Max-Age=%d', $gmdate->format('D, d-M-Y H:i:s T'), $this->options['expire']);
         }
 
         if ($this->options['path']) {
