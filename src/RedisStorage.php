@@ -43,6 +43,9 @@ class RedisStorage implements StorageInterface
             if ($this->expire) {
                 $this->server->expire($this->prefix.$id, $this->expire);
             }
+            else {
+                $this->server->persist($this->prefix.$id);
+            }
             return true;
         }
 
