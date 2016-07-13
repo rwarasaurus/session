@@ -53,7 +53,6 @@ class Session implements SessionInterface
             'secure' => 0,
             'httponly' => 0,
             'entropy' => 32,
-            'strict' => 0,
         ];
         $this->options = array_merge($defaults, $options);
     }
@@ -65,67 +64,34 @@ class Session implements SessionInterface
         return $this;
     }
 
+    public function clear(): SessionInterface
+    {
+        $this->data = [];
+
+        return $this;
+    }
+
     public function destroy(): SessionInterface
     {
         $this->storage->destroy($this->id);
-        $this->data = [];
 
-        return $this->migrate();
-    }
-
-    protected function ua(): string
-    {
-        return $_SERVER['HTTP_USER_AGENT'] ?? 'other';
-    }
-
-    protected function ip(): string
-    {
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    }
-
-    protected function create()
-    {
-        $this->id = $this->generate();
-        $this->data = [
-            'ua' => $this->ua(),
-            'ip' => $this->ip(),
-        ];
-    }
-
-    protected function resume()
-    {
-        $this->id = $this->cookies->get($this->name());
-
-        if ($this->storage->exists($this->id)) {
-            $this->data = $this->storage->read($this->id);
-        } else {
-            $this->create();
-        }
-    }
-
-    public function isStrict(): bool
-    {
-        return $this->options['strict'];
-    }
-
-    protected function matchRules(): bool
-    {
-        return empty($this->data['ua']) || $this->data['ua'] != $this->ua() ||
-            empty($this->data['ip']) || $this->data['ip'] != $this->ip();
+        return $this->clear()->migrate();
     }
 
     public function start()
     {
-        if ($this->cookies->has($this->options['name'])) {
-            $this->resume();
-        } else {
-            $this->create();
-        }
+        $name = $this->options['name'];
 
-        // in strict mode match rules
-        if ($this->isStrict() && false === $this->matchRules()) {
-            // matches failed start a new session
-            $this->create();
+        // try and resume session from cookie
+        if ($this->cookies->has($name)) {
+            $this->id = $this->cookies->get($name);
+            if($this->storage->exists($this->id)) {
+                $this->data = $this->storage->read($this->id);
+            }
+        }
+        else {
+            // create a new session id
+            $this->migrate();
         }
 
         $this->started = true;
