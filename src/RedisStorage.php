@@ -4,6 +4,7 @@ namespace Session;
 
 use Redis;
 use InvalidArgumentException;
+use RuntimeException;
 
 class RedisStorage implements StorageInterface
 {
@@ -40,16 +41,16 @@ class RedisStorage implements StorageInterface
     {
         $jsonString = json_encode($data);
 
-        if ($this->server->set($this->prefix.$id, $jsonString)) {
-            if ($this->expire) {
-                $this->server->expire($this->prefix.$id, $this->expire);
-            } else {
-                $this->server->persist($this->prefix.$id);
-            }
-            return true;
+        if (true !== $this->server->set($this->prefix.$id, $jsonString)) {
+            throw new RuntimeException(sprintf('failed to write to redis server: %s', $this->server->getLastError()));
         }
 
-        return false;
+        // set the timeout on key
+        if ($this->expire) {
+            $this->server->expire($this->prefix.$id, $this->expire);
+        }
+
+        return true;
     }
 
     public function destroy(string $id): bool
