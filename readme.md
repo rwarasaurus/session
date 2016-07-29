@@ -1,4 +1,4 @@
-# PSR7 JSON Session storage
+# JSON Session storage
 
 Session data is stored as a json encoded string.
 
