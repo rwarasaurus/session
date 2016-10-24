@@ -24,7 +24,12 @@ class FileStorage implements StorageInterface
             while (false !== ($filename = readdir($handle))) {
                 // get full path
                 $filepath = $this->path . '/' . $filename;
-                
+
+                // skip folders
+                if (is_dir($filepath)) {
+                    continue;
+                }
+
                 // file expired
                 if ($this->expired($filepath, $now)) {
                     unlink($filepath);
