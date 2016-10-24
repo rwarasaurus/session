@@ -55,7 +55,10 @@ File storage example
 		FileStorage
 	};
 
-	// you will have to implement your own garbage collection for now
-	$storage = new FileStorage('/path/to/sessions');
+	$ttl = 3600;
+	$storage = new FileStorage('/path/to/sessions', $ttl);
+
+	// remove expired sessions
+	$storage->purge();
 
 	$session = new Session(new Cookies, $storage);

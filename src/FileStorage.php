@@ -16,18 +16,34 @@ class FileStorage implements StorageInterface
 
     public function purge()
     {
+        clearstatcache();
         $handle = opendir($this->path);
         $now = time();
 
-        while (false !== ($filepath = readdir($handle))) {
-            // last modification time
-            $mtime = filemtime($filepath);
-
-            // file expired
-            if (($mtime + $this->expire) < $now) {
-                unlink($filepath);
+        try {
+            while (false !== ($filepath = readdir($handle))) {
+                // file expired
+                if ($this->expired($filepath, $now)) {
+                    unlink($filepath);
+                }
             }
+        } catch (\Throwable $exception) {
+            throw new \RuntimeException(sprintf('failed to unlink file: %s', $filepath), 0, $exception);
+        } finally {
+            closedir($handle);
         }
+    }
+
+    protected function expired(string $filepath, int $time): bool
+    {
+        if (! is_file($filepath)) {
+            return true;
+        }
+
+        // last modification time
+        $mtime = filemtime($filepath);
+
+        return ($mtime + $this->expire) < $time;
     }
 
     protected function filepath(string $id): string
@@ -37,7 +53,12 @@ class FileStorage implements StorageInterface
 
     public function read(string $id): array
     {
-        $path = $this->filepath($id);
+        $filepath = $this->filepath($id);
+        $now = time();
+
+        if ($this->expired($filepath, $now)) {
+            return [];
+        }
 
         $contents = file_get_contents($path);
 
@@ -46,9 +67,10 @@ class FileStorage implements StorageInterface
 
     public function exists(string $id): bool
     {
-        $path = $this->filepath($id);
+        $filepath = $this->filepath($id);
+        $now = time();
 
-        return is_file($path);
+        return ! $this->expired($filepath, $now);
     }
 
     public function write(string $id, array $data): bool
