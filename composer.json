@@ -14,7 +14,8 @@
 		"php": "^7"
 	},
 	"require-dev": {
-		"phpspec/phpspec": "~2"
+		"phpspec/phpspec": "~2",
+		"friendsofphp/php-cs-fixer": "~1"
 	},
 	"config": {
 		"bin-dir": "bin"

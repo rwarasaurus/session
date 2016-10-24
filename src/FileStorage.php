@@ -6,9 +6,28 @@ class FileStorage implements StorageInterface
 {
     protected $path;
 
-    public function __construct(string $path)
+    protected $expire;
+
+    public function __construct(string $path, int $expire = 3600)
     {
         $this->path = realpath($path);
+        $this->expire = $expire;
+    }
+
+    public function purge()
+    {
+        $handle = opendir($this->path);
+        $now = time();
+
+        while (false !== ($filepath = readdir($handle))) {
+            // last modification time
+            $mtime = filemtime($filepath);
+
+            // file expired
+            if (($mtime + $this->expire) < $now) {
+                unlink($filepath);
+            }
+        }
     }
 
     protected function filepath(string $id): string
