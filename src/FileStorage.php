@@ -68,7 +68,7 @@ class FileStorage implements StorageInterface
             return [];
         }
 
-        $contents = file_get_contents($path);
+        $contents = file_get_contents($filepath);
 
         return json_decode($contents, true);
     }
@@ -83,11 +83,11 @@ class FileStorage implements StorageInterface
 
     public function write(string $id, array $data): bool
     {
-        $path = $this->filepath($id);
+        $filepath = $this->filepath($id);
 
         $jsonString = json_encode($data);
 
-        if (false === file_put_contents($path, $jsonString, LOCK_EX)) {
+        if (false === file_put_contents($filepath, $jsonString, LOCK_EX)) {
             throw new \RuntimeException('Failed to write session file');
         }
 
@@ -96,8 +96,8 @@ class FileStorage implements StorageInterface
 
     public function destroy(string $id): bool
     {
-        $path = $this->filepath($id);
+        $filepath = $this->filepath($id);
 
-        return is_file($path) && unlink($path);
+        return is_file($filepath) && unlink($path);
     }
 }
