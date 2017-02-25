@@ -52,6 +52,7 @@ class Session implements SessionInterface
             'domain' => '',
             'secure' => 0,
             'httponly' => 0,
+            'samesite' => '',
             'entropy' => 32,
         ];
         $this->options = array_merge($defaults, $options);
@@ -151,7 +152,11 @@ class Session implements SessionInterface
             $pairs[] = 'HttpOnly';
         }
 
-        return implode('; ', $pairs);
+        if ($this->options['samesite']) {
+            $pairs[] = sprintf('SameSite=%s', $this->options['samesite']);
+        }
+
+        return implode(';', $pairs);
     }
 
     public function has(string $key): bool
