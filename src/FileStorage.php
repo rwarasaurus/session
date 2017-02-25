@@ -23,7 +23,7 @@ class FileStorage implements StorageInterface
         try {
             while (false !== ($filename = readdir($handle))) {
                 // get full path
-                $filepath = $this->path . '/' . $filename;
+                $filepath = $this->path.'/'.$filename;
 
                 // skip folders
                 if (is_dir($filepath)) {
@@ -44,7 +44,7 @@ class FileStorage implements StorageInterface
 
     protected function expired(string $filepath, int $time): bool
     {
-        if (! is_file($filepath)) {
+        if (!is_file($filepath)) {
             return true;
         }
 
@@ -78,7 +78,7 @@ class FileStorage implements StorageInterface
         $filepath = $this->filepath($id);
         $now = time();
 
-        return ! $this->expired($filepath, $now);
+        return !$this->expired($filepath, $now);
     }
 
     public function write(string $id, array $data): bool

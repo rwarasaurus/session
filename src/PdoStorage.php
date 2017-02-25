@@ -24,11 +24,11 @@ class PdoStorage implements StorageInterface
 
     public function purge()
     {
-        $expires = new DateTime;
+        $expires = new DateTime();
         $exires->sub(new DateInterval(sprintf('PT%dS', $this->expires)));
         $stm = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE last_active < ?', $this->table));
         $stm->execute([
-            $exires->format('Y-m-d H:i:s')
+            $exires->format('Y-m-d H:i:s'),
         ]);
     }
 
@@ -56,22 +56,21 @@ class PdoStorage implements StorageInterface
 
     public function write(string $id, array $data): bool
     {
-        $now = new DateTime;
+        $now = new DateTime();
         $jsonString = json_encode($data);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new InvalidArgumentException('Error encoding data to json string: ' . json_last_error_msg());
+            throw new InvalidArgumentException('Error encoding data to json string: '.json_last_error_msg());
         }
 
-        if($this->exists($id)) {
+        if ($this->exists($id)) {
             $stm = $this->pdo->prepare(sprintf('UPDATE %s SET last_active = ?, data = ? WHERE id = ?', $this->table));
             $stm->execute([
                 $now->format('Y-m-d H:i:s'),
                 $jsonString,
                 $id,
             ]);
-        }
-        else {
+        } else {
             $stm = $this->pdo->prepare(sprintf('INSERT INTO %s (id, last_active, data) VALUES(?, ?, ?)', $this->table));
             $stm->execute([
                 $id,
@@ -87,7 +86,7 @@ class PdoStorage implements StorageInterface
     {
         $stm = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE id = ?', $this->table));
         $stm->execute([
-            $id
+            $id,
         ]);
 
         return $stm->rowCount() > 0;

@@ -2,8 +2,6 @@
 
 namespace Session;
 
-use Psr\Http\Message\ResponseInterface;
-
 interface SessionInterface extends StashInterface
 {
     public function id(): string;
