@@ -6,9 +6,14 @@ class Cookies implements CookiesInterface
 {
     protected $cookies;
 
-    public function __construct(array $cookies = null)
+    public function __construct(array $cookies = [])
     {
-        $this->cookies = null === $cookies ? $_COOKIE : $cookies;
+        $this->cookies = $cookies;
+    }
+
+    public static function fromGlobals()
+    {
+        return new self($_COOKIE);
     }
 
     public function has(string $name): bool
