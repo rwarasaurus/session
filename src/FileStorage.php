@@ -98,6 +98,6 @@ class FileStorage implements StorageInterface
     {
         $filepath = $this->filepath($id);
 
-        return is_file($filepath) && unlink($path);
+        return is_file($filepath) && unlink($filepath);
     }
 }

@@ -2,6 +2,12 @@
 
 namespace Session;
 
+use DateTime;
+use DateTimeZone;
+use DateInterval;
+use RuntimeException;
+use InvalidArgumentException;
+
 class Session implements SessionInterface
 {
     protected $cookies;
@@ -48,13 +54,23 @@ class Session implements SessionInterface
         $defaults = [
             'name' => 'PHPSESSID',
             'expire' => 0,
-            'path' => '',
+            'path' => '/',
             'domain' => '',
             'secure' => 0,
             'httponly' => 0,
             'samesite' => '',
             'entropy' => 32,
         ];
+
+        $invalid = array_diff(array_keys($options), array_keys($defaults));
+
+        if(!empty($invalid)) {
+            throw new InvalidArgumentException(sprintf(
+                'Invalid session options: %s.',
+                implode(', ', $invalid)
+            ));
+        }
+
         $this->options = array_merge($defaults, $options);
     }
 
@@ -105,7 +121,7 @@ class Session implements SessionInterface
     protected function commit()
     {
         if (!$this->started) {
-            throw new \RuntimeException('Session has not been started');
+            throw new RuntimeException('Session has not been started');
         }
 
         $this->storage->write($this->id, $this->data);
@@ -114,7 +130,7 @@ class Session implements SessionInterface
     public function close()
     {
         if (!$this->started) {
-            throw new \RuntimeException('Session has not been started');
+            throw new RuntimeException('Session has not been started');
         }
 
         $this->commit();
@@ -129,23 +145,23 @@ class Session implements SessionInterface
         ];
 
         if ($this->options['expire']) {
-            $gmdate = new \DateTime();
-            $gmdate->setTimezone(new \DateTimeZone('GMT'));
+            $gmdate = new DateTime();
+            $gmdate->setTimezone(new DateTimeZone('GMT'));
             $format = sprintf('PT%dS', $this->options['expire']);
-            $gmdate->add(new \DateInterval($format));
-            $pairs[] = sprintf('expires=%s; Max-Age=%d', $gmdate->format('D, d-M-Y H:i:s T'), $this->options['expire']);
+            $gmdate->add(new DateInterval($format));
+            $pairs[] = sprintf('Expires=%s; Max-Age=%d', $gmdate->format('D, d-M-Y H:i:s T'), $this->options['expire']);
         }
 
         if ($this->options['path']) {
-            $pairs[] = sprintf('path=%s', $this->options['path']);
+            $pairs[] = sprintf('Path=%s', $this->options['path']);
         }
 
         if ($this->options['domain']) {
-            $pairs[] = sprintf('domain=%s', $this->options['domain']);
+            $pairs[] = sprintf('Domain=%s', $this->options['domain']);
         }
 
         if ($this->options['secure']) {
-            $pairs[] = 'secure';
+            $pairs[] = 'Secure';
         }
 
         if ($this->options['httponly']) {
@@ -156,7 +172,7 @@ class Session implements SessionInterface
             $pairs[] = sprintf('SameSite=%s', $this->options['samesite']);
         }
 
-        return implode(';', $pairs);
+        return implode('; ', $pairs);
     }
 
     public function has(string $key): bool
