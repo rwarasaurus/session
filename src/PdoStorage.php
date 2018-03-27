@@ -25,10 +25,10 @@ class PdoStorage implements StorageInterface
     public function purge()
     {
         $expires = new DateTime();
-        $exires->sub(new DateInterval(sprintf('PT%dS', $this->expires)));
+        $expires->sub(new DateInterval(sprintf('PT%dS', $this->expires)));
         $stm = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE last_active < ?', $this->table));
         $stm->execute([
-            $exires->format('Y-m-d H:i:s'),
+            $expires->format('Y-m-d H:i:s'),
         ]);
     }
 
