@@ -3,7 +3,6 @@
 namespace Session;
 
 use DateTime;
-use DateInterval;
 use PDO;
 use InvalidArgumentException;
 
@@ -24,8 +23,7 @@ class PdoStorage implements StorageInterface
 
     public function purge()
     {
-        $expires = new DateTime();
-        $expires->sub(new DateInterval(sprintf('PT%dS', $this->expires)));
+        $expires = DateTime::createFromFormat('U', time() - $this->expire);
         $stm = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE last_active < ?', $this->table));
         $stm->execute([
             $expires->format('Y-m-d H:i:s'),
