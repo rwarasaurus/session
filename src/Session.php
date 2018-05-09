@@ -22,6 +22,13 @@ class Session implements SessionInterface
 
     protected $started = false;
 
+    /**
+     * Contsruct the session!
+     * 
+     * @param CookiesInterface
+     * @param StorageInterface
+     * @param array
+     */
     public function __construct(CookiesInterface $cookies, StorageInterface $storage, array $options = [])
     {
         $this->cookies = $cookies;
@@ -29,26 +36,51 @@ class Session implements SessionInterface
         $this->setOptions($options);
     }
 
+    /**
+     * Generate a secure random session ID.
+     * 
+     * @return string
+     */
     protected function generate(): string
     {
         return bin2hex(random_bytes($this->options['entropy']));
     }
 
+    /**
+     * Get the session ID.
+     * 
+     * @return string
+     */
     public function id(): string
     {
         return $this->id;
     }
 
+    /**
+     * Get the cookie name.
+     * 
+     * @return string
+     */
     public function name(): string
     {
         return $this->options['name'];
     }
 
+    /**
+     * Return the config options.
+     * 
+     * @return array
+     */
     public function getOptions(): array
     {
         return $this->options;
     }
 
+    /**
+     * Set the config options.
+     * 
+     * @param array
+     */
     public function setOptions(array $options)
     {
         $defaults = [
@@ -64,7 +96,7 @@ class Session implements SessionInterface
 
         $invalid = array_diff(array_keys($options), array_keys($defaults));
 
-        if(!empty($invalid)) {
+        if (!empty($invalid)) {
             throw new InvalidArgumentException(sprintf(
                 'Invalid session options: %s.',
                 implode(', ', $invalid)
@@ -74,6 +106,11 @@ class Session implements SessionInterface
         $this->options = array_merge($defaults, $options);
     }
 
+    /**
+     * Migrate the session ID.
+     * 
+     * @return SessionInterface
+     */
     public function migrate(): SessionInterface
     {
         $this->id = $this->generate();
@@ -81,6 +118,11 @@ class Session implements SessionInterface
         return $this;
     }
 
+    /**
+     * Clear the session data.
+     * 
+     * @return SessionInterface
+     */
     public function clear(): SessionInterface
     {
         $this->data = [];
@@ -88,6 +130,11 @@ class Session implements SessionInterface
         return $this;
     }
 
+    /**
+     * Destroy the session data and migrate session ID.
+     * 
+     * @return SessionInterface
+     */
     public function destroy(): SessionInterface
     {
         $this->storage->destroy($this->id);
@@ -95,6 +142,9 @@ class Session implements SessionInterface
         return $this->clear()->migrate();
     }
 
+    /**
+     * Start the session.
+     */
     public function start()
     {
         $name = $this->options['name'];
@@ -113,11 +163,19 @@ class Session implements SessionInterface
         $this->started = true;
     }
 
+    /**
+     * Check if the session has been started.
+     * 
+     * @return bool
+     */
     public function started(): bool
     {
         return $this->started;
     }
 
+    /**
+     * Commit data to storage.
+     */
     protected function commit()
     {
         if (!$this->started) {
@@ -127,6 +185,9 @@ class Session implements SessionInterface
         $this->storage->write($this->id, $this->data);
     }
 
+    /**
+     * Close the session.
+     */
     public function close()
     {
         if (!$this->started) {
@@ -138,6 +199,11 @@ class Session implements SessionInterface
         $this->started = false;
     }
 
+    /**
+     * Return the cookie header.
+     * 
+     * @return string
+     */
     public function cookie(): string
     {
         $pairs = [
@@ -149,7 +215,11 @@ class Session implements SessionInterface
             $gmdate->setTimezone(new DateTimeZone('GMT'));
             $format = sprintf('PT%dS', $this->options['expire']);
             $gmdate->add(new DateInterval($format));
-            $pairs[] = sprintf('Expires=%s; Max-Age=%d', $gmdate->format('D, d-M-Y H:i:s T'), $this->options['expire']);
+            $pairs[] = sprintf(
+                'Expires=%s; Max-Age=%d',
+                $gmdate->format('D, d-M-Y H:i:s T'),
+                $this->options['expire']
+            );
         }
 
         if ($this->options['path']) {
@@ -175,21 +245,49 @@ class Session implements SessionInterface
         return implode('; ', $pairs);
     }
 
+    /**
+     * Check if the session has a key.
+     * 
+     * @param string
+     *
+     * @return bool
+     */
     public function has(string $key): bool
     {
         return array_key_exists($key, $this->data);
     }
 
+    /**
+     * Get a session key with a fallback.
+     * 
+     * @param string
+     * @param string
+     *
+     * @return string
+     */
     public function get(string $key, $default = null)
     {
-        return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
+        return $this->has($key) ? $this->data[$key] : $default;
     }
 
+    /**
+     * Get all session data.
+     * 
+     * @return array
+     */
     public function all(): array
     {
-        return array_intersect_key(['_stash_in', '_stash_out'], $this->data);
+        return array_diff_key($this->data, array_flip(['_stash_in', '_stash_out']));
     }
 
+    /**
+     * Store a key-value in the session.
+     * 
+     * @param string
+     * @param string
+     *
+     * @return SessionInterface
+     */
     public function put(string $key, $value): SessionInterface
     {
         $this->data[$key] = $value;
@@ -197,6 +295,13 @@ class Session implements SessionInterface
         return $this;
     }
 
+    /**
+     * Remove a key from the session.
+     * 
+     * @param string
+     *
+     * @return SessionInterface
+     */
     public function remove(string $key): SessionInterface
     {
         if ($this->has($key)) {
@@ -206,6 +311,11 @@ class Session implements SessionInterface
         return $this;
     }
 
+    /**
+     * Rotate session stash data for the next request.
+     * 
+     * @return SessionInterface
+     */
     public function rotate(): SessionInterface
     {
         $this->data['_stash_out'] = [];
@@ -218,13 +328,31 @@ class Session implements SessionInterface
         return $this;
     }
 
+    /**
+     * Get current stash key.
+     * 
+     * @param string
+     * @param string
+     *
+     * @return string
+     */
     public function getStash(string $key, $default = null)
     {
         return $this->data['_stash_out'][$key] ?? $default;
     }
 
-    public function putStash(string $key, $value)
+    /**
+     * Store a key-value in session stash for the next request.
+     * 
+     * @param string
+     * @param string
+     *
+     * @return SessionInterface
+     */
+    public function putStash(string $key, $value): SessionInterface
     {
         $this->data['_stash_in'][$key] = $value;
+
+        return $this;
     }
 }

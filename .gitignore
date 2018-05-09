@@ -1,7 +1,4 @@
-*.phar
-*.lock
-*.log
-.DS_Store
 /vendor
 /bin
-/sessions
+*.phar
+*.log

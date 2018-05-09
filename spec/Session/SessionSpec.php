@@ -65,4 +65,17 @@ class SessionSpec extends ObjectBehavior
         $this->start();
         $this->started()->shouldEqual(true);
     }
+
+    public function it_should_return_all_keys(Cookies $cookies, ArrayStorage $storage)
+    {
+        $this->beConstructedWith($cookies, $storage);
+        $this->started()->shouldEqual(false);
+        $cookies->has('PHPSESSID')->willReturn(true);
+        $cookies->get('PHPSESSID')->willReturn('1234');
+        $storage->exists('1234')->willReturn(true);
+        $storage->read('1234')->shouldBeCalled();
+        $storage->read('1234')->willReturn(['foo' => 'bar', 'baz' => 'qux']);
+        $this->start();
+        $this->all()->shouldEqual(['foo' => 'bar', 'baz' => 'qux']);
+    }
 }
