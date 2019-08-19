@@ -5,11 +5,10 @@ namespace spec\Session;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 use Session\Cookies;
-use Session\ArrayStorage;
+use Session\Storage\ArrayStorage;
 
 class SessionSpec extends ObjectBehavior
 {
-
     public function it_should_return_a_id(Cookies $cookies, ArrayStorage $storage)
     {
         $this->beConstructedWith($cookies, $storage);

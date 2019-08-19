@@ -1,13 +1,14 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Session;
+namespace Session\Storage;
 
-use DateTime;
+use DateTimeImmutable;
 use PDO;
-use InvalidArgumentException;
 
 class PdoStorage implements StorageInterface
 {
+    use Encoding;
+
     protected $pdo;
 
     protected $expire;
@@ -23,7 +24,7 @@ class PdoStorage implements StorageInterface
 
     public function purge()
     {
-        $expires = DateTime::createFromFormat('U', time() - $this->expire);
+        $expires = DateTimeImmutable::createFromFormat('U', time() - $this->expire);
         $stm = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE last_active < ?', $this->table));
         $stm->execute([
             $expires->format('Y-m-d H:i:s'),
@@ -41,7 +42,7 @@ class PdoStorage implements StorageInterface
             return [];
         }
 
-        return json_decode($contents, true);
+        return $this->decode($contents);
     }
 
     public function exists(string $id): bool
@@ -54,18 +55,14 @@ class PdoStorage implements StorageInterface
 
     public function write(string $id, array $data): bool
     {
-        $now = new DateTime();
-        $jsonString = json_encode($data);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new InvalidArgumentException('Error encoding data to json string: '.json_last_error_msg());
-        }
+        $now = new DateTimeImmutable();
+        $contents = $this->encode($data);
 
         if ($this->exists($id)) {
             $stm = $this->pdo->prepare(sprintf('UPDATE %s SET last_active = ?, data = ? WHERE id = ?', $this->table));
             $stm->execute([
                 $now->format('Y-m-d H:i:s'),
-                $jsonString,
+                $contents,
                 $id,
             ]);
         } else {
@@ -73,7 +70,7 @@ class PdoStorage implements StorageInterface
             $stm->execute([
                 $id,
                 $now->format('Y-m-d H:i:s'),
-                $jsonString,
+                $contents,
             ]);
         }
 

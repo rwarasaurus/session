@@ -1,14 +1,16 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Session;
+namespace Session\Storage;
 
 class ArrayStorage implements StorageInterface
 {
+    use Encoding;
+
     protected $array = [];
 
     public function read(string $id): array
     {
-        return json_decode($this->array[$id], true);
+        return $this->decode($this->array[$id]);
     }
 
     public function exists(string $id): bool
@@ -18,7 +20,7 @@ class ArrayStorage implements StorageInterface
 
     public function write(string $id, array $data): bool
     {
-        $this->array[$id] = json_encode($data);
+        $this->array[$id] = $this->encode($data);
 
         return true;
     }

@@ -1,28 +1,43 @@
 {
-	"name": "rwarasaurus/session",
-	"description": "Session wrapper",
-	"license": "GPL-3.0",
-	"type": "library",
-	"authors": [
-		{
-			"name": "Kieron",
-			"homepage": "http://madebykieron.co.uk",
-			"role": "Developer"
-		}
-	],
-	"require": {
-		"php": "^7"
-	},
-	"require-dev": {
-		"phpspec/phpspec": "~2",
-		"friendsofphp/php-cs-fixer": "~1"
-	},
-	"config": {
-		"bin-dir": "bin"
-	},
-	"autoload": {
-		"psr-4": {
-			"Session\\": "src/"
-		}
-	}
+    "name": "rwarasaurus/session",
+    "description": "Session wrapper",
+    "license": "GPL-3.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Kieron",
+            "homepage": "http://madebykieron.co.uk",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7"
+    },
+    "require-dev": {
+        "phpspec/phpspec": "~2",
+        "friendsofphp/php-cs-fixer": "~2"
+    },
+    "config": {
+        "bin-dir": "bin"
+    },
+    "autoload": {
+        "psr-4": {
+            "Session\\": "src/"
+        }
+    },
+     "suggest": {
+        "league/flysystem": "File system session storage",
+        "predis/predis": "Redis session storage",
+        "ext-redis": "Redis session storage"
+    },
+    "scripts": {
+        "psr": [
+            "./bin/php-cs-fixer fix src/ --allow-risky=yes --rules=@PSR2,no_unused_imports,ordered_imports,ordered_interfaces,single_quote,trailing_comma_in_multiline_array"
+        ],
+        "uninstall": [
+            "rm -rf ./bin",
+            "rm -rf ./vendor",
+            "rm ./composer.lock"
+        ]
+    }
 }

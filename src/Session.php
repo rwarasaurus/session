@@ -1,54 +1,74 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Session;
 
-use DateTime;
-use DateTimeZone;
 use DateInterval;
-use RuntimeException;
-use InvalidArgumentException;
+use DateTimeImmutable;
+use DateTimeZone;
 
 class Session implements SessionInterface
 {
+    use Options, Stash;
+
+    /**
+     * @var CookiesInterface
+     */
     protected $cookies;
 
+    /**
+     * @var StorageInterface
+     */
     protected $storage;
 
+    /**
+     * @var array
+     */
     protected $data = [];
 
+    /**
+     * @var string|null
+     */
     protected $id;
 
-    protected $options;
-
+    /**
+     * @var boolean
+     */
     protected $started = false;
 
     /**
-     * Contsruct the session!
-     * 
+     * Construct the session!
+     *
      * @param CookiesInterface
      * @param StorageInterface
      * @param array
      */
-    public function __construct(CookiesInterface $cookies, StorageInterface $storage, array $options = [])
+    public function __construct(CookiesInterface $cookies, Storage\StorageInterface $storage, array $options = [])
     {
         $this->cookies = $cookies;
         $this->storage = $storage;
         $this->setOptions($options);
+        $this->id = $this->generate();
     }
 
     /**
      * Generate a secure random session ID.
-     * 
+     *
      * @return string
      */
     protected function generate(): string
     {
-        return bin2hex(random_bytes($this->options['entropy']));
+        $entropy = (int) $this->getOption('entropy');
+
+        if ($entropy < 32) {
+            $entropy = 32;
+        }
+
+        return \bin2hex(\random_bytes($entropy));
     }
 
     /**
      * Get the session ID.
-     * 
+     *
      * @return string
      */
     public function id(): string
@@ -58,57 +78,17 @@ class Session implements SessionInterface
 
     /**
      * Get the cookie name.
-     * 
+     *
      * @return string
      */
     public function name(): string
     {
-        return $this->options['name'];
-    }
-
-    /**
-     * Return the config options.
-     * 
-     * @return array
-     */
-    public function getOptions(): array
-    {
-        return $this->options;
-    }
-
-    /**
-     * Set the config options.
-     * 
-     * @param array
-     */
-    public function setOptions(array $options)
-    {
-        $defaults = [
-            'name' => 'PHPSESSID',
-            'expire' => 0,
-            'path' => '/',
-            'domain' => '',
-            'secure' => 0,
-            'httponly' => 0,
-            'samesite' => '',
-            'entropy' => 32,
-        ];
-
-        $invalid = array_diff(array_keys($options), array_keys($defaults));
-
-        if (!empty($invalid)) {
-            throw new InvalidArgumentException(sprintf(
-                'Invalid session options: %s.',
-                implode(', ', $invalid)
-            ));
-        }
-
-        $this->options = array_merge($defaults, $options);
+        return $this->getOption('name');
     }
 
     /**
      * Migrate the session ID.
-     * 
+     *
      * @return SessionInterface
      */
     public function migrate(): SessionInterface
@@ -120,7 +100,7 @@ class Session implements SessionInterface
 
     /**
      * Clear the session data.
-     * 
+     *
      * @return SessionInterface
      */
     public function clear(): SessionInterface
@@ -132,7 +112,7 @@ class Session implements SessionInterface
 
     /**
      * Destroy the session data and migrate session ID.
-     * 
+     *
      * @return SessionInterface
      */
     public function destroy(): SessionInterface
@@ -147,7 +127,7 @@ class Session implements SessionInterface
      */
     public function start()
     {
-        $name = $this->options['name'];
+        $name = $this->name();
 
         // try and resume session from cookie
         if ($this->cookies->has($name)) {
@@ -155,9 +135,6 @@ class Session implements SessionInterface
             if ($this->storage->exists($this->id)) {
                 $this->data = $this->storage->read($this->id);
             }
-        } else {
-            // create a new session id
-            $this->migrate();
         }
 
         $this->started = true;
@@ -165,7 +142,7 @@ class Session implements SessionInterface
 
     /**
      * Check if the session has been started.
-     * 
+     *
      * @return bool
      */
     public function started(): bool
@@ -179,7 +156,7 @@ class Session implements SessionInterface
     protected function commit()
     {
         if (!$this->started) {
-            throw new RuntimeException('Session has not been started');
+            throw new SessionException('Session has not been started');
         }
 
         $this->storage->write($this->id, $this->data);
@@ -191,7 +168,7 @@ class Session implements SessionInterface
     public function close()
     {
         if (!$this->started) {
-            throw new RuntimeException('Session has not been started');
+            throw new SessionException('Session has not been started');
         }
 
         $this->commit();
@@ -201,45 +178,44 @@ class Session implements SessionInterface
 
     /**
      * Return the cookie header.
-     * 
+     *
      * @return string
      */
     public function cookie(): string
     {
         $pairs = [
-            sprintf('%s=%s', $this->options['name'], $this->id),
+            sprintf('%s=%s', $this->name(), $this->id),
         ];
 
-        if ($this->options['expire']) {
-            $gmdate = new DateTime();
+        if ($expire = $this->getOption('expire')) {
+            $gmdate = new DateTimeImmutable();
             $gmdate->setTimezone(new DateTimeZone('GMT'));
-            $format = sprintf('PT%dS', $this->options['expire']);
-            $gmdate->add(new DateInterval($format));
+            $gmdate->add(new DateInterval(sprintf('PT%uS', $expire)));
             $pairs[] = sprintf(
-                'Expires=%s; Max-Age=%d',
+                'Expires=%s; Max-Age=%u',
                 $gmdate->format('D, d-M-Y H:i:s T'),
-                $this->options['expire']
+                $expire
             );
         }
 
-        if ($this->options['path']) {
-            $pairs[] = sprintf('Path=%s', $this->options['path']);
+        if ($path = $this->getOption('path')) {
+            $pairs[] = sprintf('Path=%s', $path);
         }
 
-        if ($this->options['domain']) {
-            $pairs[] = sprintf('Domain=%s', $this->options['domain']);
+        if ($domain = $this->getOption('domain')) {
+            $pairs[] = sprintf('Domain=%s', $domain);
         }
 
-        if ($this->options['secure']) {
+        if ($this->getOption('secure')) {
             $pairs[] = 'Secure';
         }
 
-        if ($this->options['httponly']) {
+        if ($this->getOption('httponly')) {
             $pairs[] = 'HttpOnly';
         }
 
-        if ($this->options['samesite']) {
-            $pairs[] = sprintf('SameSite=%s', $this->options['samesite']);
+        if ($sameSite = $this->getOption('samesite')) {
+            $pairs[] = sprintf('SameSite=%s', $sameSite);
         }
 
         return implode('; ', $pairs);
@@ -247,7 +223,7 @@ class Session implements SessionInterface
 
     /**
      * Check if the session has a key.
-     * 
+     *
      * @param string
      *
      * @return bool
@@ -259,7 +235,7 @@ class Session implements SessionInterface
 
     /**
      * Get a session key with a fallback.
-     * 
+     *
      * @param string
      * @param string
      *
@@ -272,7 +248,7 @@ class Session implements SessionInterface
 
     /**
      * Get all session data.
-     * 
+     *
      * @return array
      */
     public function all(): array
@@ -282,7 +258,7 @@ class Session implements SessionInterface
 
     /**
      * Store a key-value in the session.
-     * 
+     *
      * @param string
      * @param string
      *
@@ -297,7 +273,7 @@ class Session implements SessionInterface
 
     /**
      * Remove a key from the session.
-     * 
+     *
      * @param string
      *
      * @return SessionInterface
@@ -307,51 +283,6 @@ class Session implements SessionInterface
         if ($this->has($key)) {
             unset($this->data[$key]);
         }
-
-        return $this;
-    }
-
-    /**
-     * Rotate session stash data for the next request.
-     * 
-     * @return SessionInterface
-     */
-    public function rotate(): SessionInterface
-    {
-        $this->data['_stash_out'] = [];
-
-        if (array_key_exists('_stash_in', $this->data)) {
-            $this->data['_stash_out'] = $this->data['_stash_in'];
-            unset($this->data['_stash_in']);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Get current stash key.
-     * 
-     * @param string
-     * @param string
-     *
-     * @return string
-     */
-    public function getStash(string $key, $default = null)
-    {
-        return $this->data['_stash_out'][$key] ?? $default;
-    }
-
-    /**
-     * Store a key-value in session stash for the next request.
-     * 
-     * @param string
-     * @param string
-     *
-     * @return SessionInterface
-     */
-    public function putStash(string $key, $value): SessionInterface
-    {
-        $this->data['_stash_in'][$key] = $value;
 
         return $this;
     }
