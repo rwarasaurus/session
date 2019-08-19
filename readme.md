@@ -1,3 +1,6 @@
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/rwarasaurus/session/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/rwarasaurus/session/?branch=master)
+[![Build Status](https://scrutinizer-ci.com/g/rwarasaurus/session/badges/build.png?b=master)](https://scrutinizer-ci.com/g/rwarasaurus/session/build-status/master)
+
 # JSON Session storage
 
 Session data is stored as a json encoded string.
